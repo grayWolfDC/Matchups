@@ -8,8 +8,8 @@ from itertools import islice
 class MCRunner():
 
     def __init__(self,pArgs):
-        maxProcs = mp.cpu_count() - 1 ) * 2
-        if pArgs.workers > maxProcs
+        maxProcs = (mp.cpu_count() - 1 ) * 2
+        if pArgs.workers > maxProcs:
             self.workers = maxProcs
         else:
             self.workers = pArgs.workers
@@ -18,11 +18,24 @@ class MCRunner():
         self.silParFi = pArgs.prsil
         self.noiParFi = pArgs.prnoi
         self.itNum = pArgs.mcrns
+        self.verbose = pArgs.verbose
         self.filesProcessed = 0
         self.l2SilFname = None
         self.l2NoiPath = None
-        self.basename
+        self.basename = None
+        self.logfname = None
         self.__GetL2FilePath()
+        self.logfname = os.path.join(self.l2MainPath,'%s.log' % self.basename)
+        if self.verbose:
+            with open(self.logfname,'w') as lf:
+                print("L1 file: %s" % self.l1path,file=lf)
+                print("L2 main path %s" % self.l2MainPath,file=lf)
+                print("silent ParFile %s" % self.silParFi,file=lf)
+                print("noisy ParFile %s" % self.noiParFi,file=lf)
+                print("number of iterations %d" % self.itNum,file=lf)
+                print("number of concurrent processes %d" %self.workers,file=lf)
+                print("silent L2 file: %s" % self.l2SilFname,file=lf)
+                print("noisy L2 path: %s" % self.l2NoiPath,file=lf)
 
     def __GetL2FilePath(self):
         pattern = '(S[0-9]+).L1A'
@@ -36,44 +49,54 @@ class MCRunner():
             os.makedirs(self.l2NoiPath)
         self.basename = basename
 
+
     def GetCmdList(self):
         '''Generates cmdList for subprocess calls'''
         cmdList = []
         cmdBase = 'l2gen ifile=%s ofile=' % self.l1path
-        if not os.path.exists(l2fs):
+        if os.path.exists(self.l2SilFname):
+            if self.verbose:
+                with open(self.logfname,'a') as lf:
+                    print('skipping silent L2', file=lf)
+        else:
             # silent L2 does not exist, add it to the tasklist
             cmd = cmdBase + '%s par=%s' %(self.l2SilFname, self.silParFi)
             cmdList.append(cmd)
-        for it in range self.itNum:
+
+        for it in range(self.itNum):
             l2f = '%s_noisy_%d.L2' %(self.basename, it+1)
             ofile = os.path.join(self.l2NoiPath, l2f)
             if os.path.exists(ofile):
+                if self.verbose:
+                    with open(self.logfname,'a') as lf:
+                        print('skipping noisy file %s' % l2f, file=lf)
                 continue
             cmd = cmdBase + '%s par=%s' %(ofile, self.noiParFi)
             cmdList.append(cmd)
         return cmdList
 
-    def Runner(self,cmdList,verbose=false):
+    def Runner(self,cmdList):
         '''
         Creates a generator for processes then slices by the number of
         concurrent processes allowed.
         cmdList is a list containing the l2gen command line for each process.
         '''
-        processes = (Popen(cmd,shell=True) for cmd in cmdList)
+
+        processes = (Popen(cmd,shell=True,stdout=DEVNULL,) for cmd in cmdList)
         runningProcs = list(islice(processes,self.workers)) # start new processes
-        if verbose: # get ready to record log
+        if self.verbose: # get ready to record log
             j = 0
         while runningProcs:
             for i,process in enumerate(runningProcs):
                 if process.poll() is not None: # process has finished
-                    if verbose: # add entry to log
-                        with open('MCLog.dat','a') as f:
-                            print('%s -- completed ' % cmdList[j],file=f,flush=True)
+                    if self.verbose: # add entry to log
+                        with open(self.logfname,'a') as lf:
+                            print('%s -- completed ' % cmdList[j],file=lf,flush=True)
                             j += 1
                     runningProcs[i] = next(processes,None) # start new process
                     if runningProcs[i] is None: # no new processes
-                    del runningProcs[i]
-                    break
+                        del runningProcs[i]
+                        break
 
 class Namespace():
     '''
@@ -98,12 +121,14 @@ def Main(args):
                         type=int,default=1000)
     parser.add_argument('-w','--workers',help='process # to allocate',
                         type=int,default=1)
+    parser.add_argument('-v','--verbose', help='increase output verbosity',
+                        action='store_true')
     parsedArgs = parser.parse_args(args)
     #Init MCRUnner Object, passing the args
     mcr = MCRunner(parsedArgs)
     # Process Silent file
     taskList = mcr.GetCmdList()
-    mcr.Runner
-
+    mcr.Runner(taskList)
+    pickle.dump(mcr,open(os.path.join(mcr.l2MainPath,'mcr_%s.pkl' % mcr.basename)))
 if __name__ == '__main__':
     Main(sys.argv[1:])
