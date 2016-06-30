@@ -80,11 +80,9 @@ class MCRunner():
         concurrent processes allowed.
         cmdList is a generator yielding l2gen command lines for each process.
         '''
-
+        status = False
         processes = (Popen(cmd,shell=True,stdout=DEVNULL,) for cmd in cmdList)
         runningProcs = list(islice(processes,self.workers)) # start new processes
-        if self.verbose: # get ready to record log
-            j = 0
         while runningProcs:
             for i,process in enumerate(runningProcs):
                 if process.poll() is not None: # process has finished
@@ -92,7 +90,8 @@ class MCRunner():
                     if runningProcs[i] is None: # no new processes
                         del runningProcs[i]
                         break
-
+                        status = True
+        return status
 class Namespace():
     '''
     Class to replace command line argument parser for IPython calls.
@@ -124,6 +123,10 @@ class BatchManager():
             mcr = MCRunner(self.pArgs)
             pickle.dump(mcr,open(os.path.join(mcr.l2MainPath,'mcr_%s.pkl'
                                                 % mcr.basename), 'wb'))
+            cmdGen = mcr.GetCmdList()
+            status = mcr.Runner(cmdGen)
+            if status:
+                del mcr # make room for the next mc set
 
 def Main(args):
     parser = argparse.ArgumentParser()
