@@ -52,7 +52,6 @@ class MCRunner():
 
     def GetCmdList(self):
         '''Generates cmdList for subprocess calls'''
-        cmdList = []
         cmdBase = 'l2gen ifile=%s ofile=' % self.l1path
         if os.path.exists(self.l2SilFname):
             if self.verbose:
@@ -61,7 +60,7 @@ class MCRunner():
         else:
             # silent L2 does not exist, add it to the tasklist
             cmd = cmdBase + '%s par=%s' %(self.l2SilFname, self.silParFi)
-            cmdList.append(cmd)
+            yield cmd
 
         for it in range(self.itNum):
             l2f = '%s_noisy_%d.L2' %(self.basename, it+1)
@@ -72,14 +71,14 @@ class MCRunner():
                         print('skipping noisy file %s' % l2f, file=lf)
                 continue
             cmd = cmdBase + '%s par=%s' %(ofile, self.noiParFi)
-            cmdList.append(cmd)
-        return cmdList
+            yield cmd
+        #return cmdList
 
     def Runner(self,cmdList):
         '''
         Creates a generator for processes then slices by the number of
         concurrent processes allowed.
-        cmdList is a list containing the l2gen command line for each process.
+        cmdList is a generator yielding l2gen command lines for each process.
         '''
 
         processes = (Popen(cmd,shell=True,stdout=DEVNULL,) for cmd in cmdList)
@@ -89,10 +88,6 @@ class MCRunner():
         while runningProcs:
             for i,process in enumerate(runningProcs):
                 if process.poll() is not None: # process has finished
-                    if self.verbose: # add entry to log
-                        with open(self.logfname,'a') as lf:
-                            print('%s -- completed ' % cmdList[j],file=lf,flush=True)
-                            j += 1
                     runningProcs[i] = next(processes,None) # start new process
                     if runningProcs[i] is None: # no new processes
                         del runningProcs[i]
