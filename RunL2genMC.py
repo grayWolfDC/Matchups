@@ -107,6 +107,29 @@ class Namespace():
     def __init__(self,**kwargs):
         self.__dict__.update(kwargs)
 
+
+class BatchManager():
+    '''
+    Class to manage batch processing of multiple L1A files by the MCRunner.
+    '''
+
+
+    def __init__(self,bArgs,isdir=True):
+        '''Takes a directory containing L1A or a text file listing
+        L1Apaths on each line.'''
+        if isdir:
+            matchPattern = os.path.join(bArgs.ifile,'*.L1A*')
+            self.ifileGen = glob.iglob(matchPattern) #L1AGenerator
+            self.pArgs = bArgs
+
+    def ProcessL1A(self):
+        '''Calls L1AGenerator to get next file to process'''
+        for ifile in self.ifileGen:
+            self.pArgs.ifile = ifile
+            mcr = MCRunner(self.pArgs)
+            pickle.dump(mcr,open(os.path.join(mcr.l2MainPath,'mcr_%s.pkl'
+                                                % mcr.basename), 'wb'))
+
 def Main(args):
     parser = argparse.ArgumentParser()
     parser.add_argument('-i','--ifile',help='l1a input file',
@@ -123,12 +146,22 @@ def Main(args):
                         type=int,default=1)
     parser.add_argument('-v','--verbose', help='increase output verbosity',
                         action='store_true')
+    parser.add_argument('-b','--batch', help='batch processing',
+                        action='store_true')
     parsedArgs = parser.parse_args(args)
-    #Init MCRUnner Object, passing the args
-    mcr = MCRunner(parsedArgs)
-    # Process Silent file
-    taskList = mcr.GetCmdList()
-    mcr.Runner(taskList)
-    pickle.dump(mcr,open(os.path.join(mcr.l2MainPath,'mcr_%s.pkl' % mcr.basename)))
+    if parsedArgs.batch:
+        bcr = BatchManager(parsedArgs)
+        bcr.ProcessL1A()
+        pickle.dump(bcr,open(os.path.join(bcr.l2MainPath, 'bcr.pkl'),'w'))
+    else:
+        #Init MCRUnner Object, passing the args
+        mcr = MCRunner(parsedArgs)
+        # Process Silent file
+        taskList = mcr.GetCmdList()
+        mcr.Runner(taskList)
+        pickle.dump(mcr,
+                    open(os.path.join(mcr.l2MainPath,'mcr_%s.pkl' % mcr.basename)
+                    ,'wb'))
+
 if __name__ == '__main__':
     Main(sys.argv[1:])
