@@ -6,8 +6,15 @@ import argparse
 from itertools import islice
 
 class MCRunner():
-
+'''
+Class to run l2gen monte carlo process, by default in parallel.
+Creates silent/noisy files  in the appropriate directories for later use
+by the uncertainty computation script.
+'''
     def __init__(self,pArgs):
+        '''
+        Takes command line arguments parsed by the argparse module.
+        '''
         maxProcs = (mp.cpu_count() - 1 ) * 2
         if pArgs.workers > maxProcs:
             self.workers = maxProcs
@@ -24,7 +31,7 @@ class MCRunner():
         self.l2NoiPath = None
         self.basename = None
         self.logfname = None
-        self.__GetL2FilePath()
+        self._GetL2FilePath()
         self.logfname = os.path.join(self.l2MainPath,'%s.log' % self.basename)
         if self.verbose:
             with open(self.logfname,'w') as lf:
@@ -37,7 +44,10 @@ class MCRunner():
                 print("silent L2 file: %s" % self.l2SilFname,file=lf)
                 print("noisy L2 path: %s" % self.l2NoiPath,file=lf)
 
-    def __GetL2FilePath(self):
+    def _GetL2FilePath(self):
+        '''
+        Handles path handling and where necessary directory creation.
+        '''
         pattern = '(S[0-9]+).L1A'
         basename = re.findall(pattern,self.l1path)[0]
         l2path = os.path.join(self.l2MainPath,basename)
@@ -72,12 +82,11 @@ class MCRunner():
                 continue
             cmd = cmdBase + '%s par=%s' %(ofile, self.noiParFi)
             yield cmd
-        #return cmdList
 
     def Runner(self,cmdList):
         '''
-        Creates a generator for processes then slices by the number of
-        concurrent processes allowed.
+        Creates a generator for processes then slices through the iterator
+        by the number ofconcurrent processes allowed.
         cmdList is a generator yielding l2gen command lines for each process.
         '''
         status = False
