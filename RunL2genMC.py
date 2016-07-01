@@ -6,11 +6,11 @@ import argparse
 from itertools import islice
 
 class MCRunner():
-'''
-Class to run l2gen monte carlo process, by default in parallel.
-Creates silent/noisy files  in the appropriate directories for later use
-by the uncertainty computation script.
-'''
+    '''
+    Class to run l2gen monte carlo process, by default in parallel.
+    Creates silent/noisy files  in the appropriate directories for later use
+    by the uncertainty computation script.
+    '''
     def __init__(self,pArgs):
         '''
         Takes command line arguments parsed by the argparse module.
