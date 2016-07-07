@@ -44,8 +44,6 @@ class MCRunner():
                 print("number of concurrent processes %d" %self.workers,file=lf)
                 print("silent L2 file: %s" % self.l2SilFname,file=lf)
                 print("noisy L2 path: %s" % self.l2NoiPath,file=lf)
-            if pArgs.batch:
-                self.logMeta = os.path.join(self.l2MainPath,'Meta.log')
 
     def _GetL2FilePath(self):
         '''
@@ -127,7 +125,10 @@ class BatchManager():
             matchPattern = os.path.join(bArgs.ifile,'*.L1A*')
             self.ifileGen = glob.iglob(matchPattern) #L1AGenerator
             self.pArgs = bArgs
-            self.verbose = bArgs.verbose
+            self.verbose =self.pArgs.verbose
+            self.l2MainPath = self.pArgs.opath
+            if self.verbose:
+                self.logMeta = os.path.join(self.l2MainPath,'Meta.log')
     def ProcessL1A(self):
         '''Calls L1AGenerator to get next file to process'''
         for ifile in self.ifileGen:
