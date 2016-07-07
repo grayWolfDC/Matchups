@@ -101,8 +101,9 @@ class MCRunner():
                     runningProcs[i] = next(processes,None) # start new process
                     if runningProcs[i] is None: # no new processes
                         del runningProcs[i]
-                        break
                         status = True
+                        break
+
         return status
 class Namespace():
     '''
@@ -126,7 +127,7 @@ class BatchManager():
             matchPattern = os.path.join(bArgs.ifile,'*.L1A*')
             self.ifileGen = glob.iglob(matchPattern) #L1AGenerator
             self.pArgs = bArgs
-
+            self.verbose = bArgs.verbose
     def ProcessL1A(self):
         '''Calls L1AGenerator to get next file to process'''
         for ifile in self.ifileGen:
