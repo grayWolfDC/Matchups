@@ -31,9 +31,10 @@ class MCRunner():
         self.l2NoiPath = None
         self.basename = None
         self.logfname = None
+        self.logMeta = None
         self._GetL2FilePath()
-        self.logfname = os.path.join(self.l2MainPath,'%s.log' % self.basename)
         if self.verbose:
+            self.logfname = os.path.join(self.l2MainPath,'%s.log' % self.basename)
             with open(self.logfname,'w') as lf:
                 print("L1 file: %s" % self.l1path,file=lf)
                 print("L2 main path %s" % self.l2MainPath,file=lf)
@@ -43,6 +44,8 @@ class MCRunner():
                 print("number of concurrent processes %d" %self.workers,file=lf)
                 print("silent L2 file: %s" % self.l2SilFname,file=lf)
                 print("noisy L2 path: %s" % self.l2NoiPath,file=lf)
+            if pArgs.batch:
+                self.logMeta = os.path.join(self.l2MainPath,'Meta.log')
 
     def _GetL2FilePath(self):
         '''
@@ -116,7 +119,6 @@ class BatchManager():
     Class to manage batch processing of multiple L1A files by the MCRunner.
     '''
 
-
     def __init__(self,bArgs,isdir=True):
         '''Takes a directory containing L1A or a text file listing
         L1Apaths on each line.'''
@@ -135,6 +137,10 @@ class BatchManager():
             cmdGen = mcr.GetCmdList()
             status = mcr.Runner(cmdGen)
             if status:
+                if self.verbose:
+                    print('\rFinished processing %s' % ifile,end='',flush=True)
+                    with open(self.logMeta,'a') as fmeta:
+                        print('Finished processing %s' % ifile,file=fmeta)
                 del mcr # make room for the next mc set
 
 def Main(args):
