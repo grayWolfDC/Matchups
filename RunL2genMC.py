@@ -4,6 +4,7 @@ import logging,pickle,sys
 import multiprocessing as mp
 import argparse
 from itertools import islice
+from datetime import datetime as dt
 
 class MCRunner():
     '''
@@ -140,7 +141,8 @@ class BatchManager():
             status = mcr.Runner(cmdGen)
             if status:
                 if self.verbose:
-                    print('\rFinished processing %s' % ifile,end='',flush=True)
+                    print('\r%s: Finished processing %s' % (dt.now(), ifile),
+                            end='',flush=True)
                     with open(self.logMeta,'a') as fmeta:
                         print('Finished processing %s' % ifile,file=fmeta)
                 del mcr # make room for the next mc set
