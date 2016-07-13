@@ -61,7 +61,6 @@ class MCRunner():
             os.makedirs(self.l2NoiPath)
         self.basename = basename
 
-
     def GetCmdList(self):
         '''Generates cmdList for subprocess calls'''
         cmdBase = 'l2gen ifile=%s ofile=' % self.l1path
@@ -102,8 +101,9 @@ class MCRunner():
                         del runningProcs[i]
                         status = True
                         break
-
         return status
+
+
 class Namespace():
     '''
     Class to replace command line argument parser for IPython calls.
@@ -130,6 +130,7 @@ class BatchManager():
             self.l2MainPath = self.pArgs.opath
             if self.verbose:
                 self.logMeta = os.path.join(self.l2MainPath,'Meta.log')
+
     def ProcessL1A(self):
         '''Calls L1AGenerator to get next file to process'''
         for ifile in self.ifileGen:
@@ -146,6 +147,7 @@ class BatchManager():
                     with open(self.logMeta,'a') as fmeta:
                         print('Finished processing %s' % ifile,file=fmeta)
                 del mcr # make room for the next mc set
+        return None
 
 def Main(args):
     parser = argparse.ArgumentParser()
