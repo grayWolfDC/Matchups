@@ -169,7 +169,6 @@ def Main(args):
     if parsedArgs.batch:
         bcr = BatchManager(parsedArgs)
         bcr.ProcessL1A()
-        pickle.dump(bcr,open(os.path.join(bcr.l2MainPath, 'bcr.pkl'),'w'))
     else:
         #Init MCRUnner Object, passing the args
         mcr = MCRunner(parsedArgs)
